@@ -121,7 +121,7 @@
 
 1. 在另一台机器上，完成上述"部署k8s集群"之前所有操作
 2. 在master执行kubeadm init 之后会有加入集群的提示，如下图
-3. ![join](img/join.png)
+3. ![join](imgs/join.png)
 4. 内如如下
 
     ```
