@@ -15,9 +15,19 @@ octavia 是一个开源的openstack的lb解决方案
 
 负责检查amphora是否失败，失败了的话，就执行failover任务
 
+### 工作流程
+
+1. 监听配置的端口号，接受amphora虚拟机发过来的数据
+1. 更新amphora-health表中的信息
+1. 之后更新listener-stats表中的信息
+1. 另一个进程用来检查是否需要执行failover任务，根据amphora-health中的更新时间-超时时间，来判断是否需要
+2. 当需要failover的时候，需要删除重建一个虚拟机。
+
 ## Housekeeping Manage
 
-删除数据库中多余的记录，管理多余的pool和certificate的记录
+1. 维护spare的虚拟机的数量，如果少了，就创建几台，如果多了，就不管了。。
+2. 删除数据库中多余的amphora记录
+3. 管理certificate的记录
 
 
 # octavia 创建 loadbalance
