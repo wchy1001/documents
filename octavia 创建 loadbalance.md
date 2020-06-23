@@ -5,7 +5,7 @@ octavia 是一个开源的openstack的lb解决方案
 
 ## octavia-api
 
-1. 负责request参数，以及创建数据库
+1. 负责request请求处理，以及创建数据库
 
 ## octavia-worker
 
@@ -100,10 +100,10 @@ octavia/api/v2/controllers/load_balancer.py中的 def post函数
         - map_lb_to_amp 就是当decider为true的时候执行，decider为一个可调用函数，并且需要接受一个history的变量，这个变量是一个字典，key是task的名字，而value是allocate_and_associate_amp的返回值，decider_depth是影响范围，可选flow，all等，这里就是allocate_and_associate_amp的任务如果返回了ampid，那么就执行map_lb_to_amp的任务，否则返回的是None，就执行create_amp的任务。
         - 下面查看create_amp的tasks，create_amp又定义了一堆的task，查看几个重点，下面是一个line flow
             1. 首先判断是否是amphora_haproxy_rest_driver driver
-            1. 如果是的话，先生成PEM证书，目前只支持local的x509本地证书生成。（证书相关内容，暂时没有深入细看）
+            1. 如果是的话，先生成PEM证书，默认的证书driver为local的x509本地证书生成。（证书相关内容，暂时没有深入细看）
             1. 之后amphora的表中更新cert_expiration字段
             1. 判断是否需要创建亲和虚拟机
-            1. 创建虚拟机（网络从配置文件amp_boot_network_list中拿，user_data_config_drive从配置文件中拿，key_name从配置文件中拿，topology从配置文件里拿，flavor，如果传进来的话就用这个flavor，没有的话，配置文件里拿，这个支持了自定义的flavor，处理availability_zone，从配置文件里找一下build_rate_limit，是否为-1，如果不是-1的话，直接使用默认的40次，接下来处理config driver中的/etc/octavia/amphora-agent.conf文件，template是在`octavia/amphorae/backends/agent/templates/amphora_agent_conf.template`，这个配置文件用到了刚才生成的证书，之后处理`/etc/rsyslog.d/10-rsyslog.conf`这个配置文件，全部处理好了之后，开始创建虚拟机。）
+            1. 创建虚拟机（网络从配置文件amp_boot_network_list中拿，user_data_config_drive从配置文件中拿，key_name从配置文件中拿，topology从配置文件里拿，flavor，如果传进来的话就用这个flavor，没有的话，配置文件里拿，这个支持了自定义的flavor，处理availability_zone，从配置文件里找一下build_rate_limit，是否为-1，如果不是-1的话，直接使用默认的40次，接下来处理config driver中的/etc/octavia/amphora-agent.conf文件，template是在`octavia/amphorae/backends/agent/templates/amphora_agent_conf.template`，这个配置文件用到了刚才生成的证书，之后处理`/etc/rsyslog.d/10-rsyslog.conf`这个日志相关的配置文件，全部处理好了之后，开始创建虚拟机。）
 
                 ```python
                 compute_id = self.compute.build(
@@ -127,7 +127,7 @@ octavia/api/v2/controllers/load_balancer.py中的 def post函数
                 1. 更新amphora表中的compute id
                 1. 更新amphora表中的状态为booting
                 1. 等待instance 的状态为running
-                1. 用instance的信息，更新amphora表中的信息，比如network_ip，image id，compute_flavor等，并不会更新vrrp相关的信息，应该是topology 为SINGLE的缘故吧
+                1. 用instance的信息，更新amphora表中的信息，比如network_ip，image id，compute_flavor等，并不会更新vrrp相关的信息，应该是topology 为SINGLE的缘故吧。（存疑）
                 1. 等待虚拟机的服务起来，通过api去请求，相当于执行` curl https://172.16.0.140:9443/ -k --cert /etc/octavia/certs/private/client.cert-and-key.pem`来获取api_version用来判断是否正常。
                 1. 调用finalize_amphora来完成驱动的工作，实际上这一步什么也没做，直接pass掉，是用来解决配置listener之前的所有的配置。
                 1. 更新amphora数据库，关联的lb_id，compute_id，amphora_id
